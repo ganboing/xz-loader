@@ -1,9 +1,9 @@
 .PHONY: clean
 
-all: test.elf boot-rv32.bin
+all: test.elf boot-rv32.bin boot-rv64.bin
 
 clean:
-	rm -f boot-rv32.elf boot-rv32.bin test.elf
+	rm -f boot-rv32.elf boot-rv32.bin boot-rv64.elf boot-rv64.bin test.elf
 
 ifdef PAYLOAD_XZ
 CPPFLAGS += -DPAYLOAD_XZ=\"$(PAYLOAD_XZ)\"
@@ -13,8 +13,9 @@ endif
 CPPFLAGS += -Ixz-embedded/linux/include/linux -Iconfig
 
 CFLAGS += -std=gnu11 -fno-strict-aliasing -ffunction-sections -fdata-sections
-CFLAGS_CROSS := -fPIE -Wall -O2 -nostdlib -ffreestanding -fno-stack-protector -Wl,--exclude-libs,ALL
-CFLAGS_RV32 := -mabi=ilp32 -march=rv32im_zifencei
+CFLAGS_CROSS := -fPIE -Wall -O2 -nostdlib -ffreestanding -fno-stack-protector
+CFLAGS_RV32 := -mabi=ilp32 -march=rv32imc_zifencei
+CFLAGS_RV64 := -mabi=lp64 -march=rv64imc_zifencei
 
 # For riscv, the payload can be compressed with:
 #   xz --riscv --lzma2=preset=0e,lc=2,lp=2,pb=2,mf=bt3 -C crc32 -vv < payload.bin > payload.xz
@@ -38,6 +39,16 @@ boot-rv32.elf: $(boot-rv32-objs) ld-riscv.lds
 		$(boot-rv32-objs) $(libquad-objs) $(libgcc-objs) $(xz-objs)
 
 boot-rv32.bin: boot-rv32.elf
+	$(CROSS_COMPILE)objcopy -O binary $< $@
+
+boot-rv64-objs := boot.c string.c printf.c uart.c decompress.c payload.S entry-riscv.S
+boot-rv64.elf: CFLAGS += $(CFLAGS_CROSS) $(CFLAGS_RV64)
+boot-rv64.elf: LDFLAGS += -T ld-riscv.lds -Wl,--gc-sections -Wl,--no-dynamic-linker -Wl,-pie
+boot-rv64.elf: $(boot-rv64-objs) ld-riscv.lds
+	$(CROSS_COMPILE)$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ \
+		$(boot-rv64-objs) $(xz-objs)
+
+boot-rv64.bin: boot-rv64.elf
 	$(CROSS_COMPILE)objcopy -O binary $< $@
 
 test.elf: CFLAGS += -fsanitize=address -fPIE -Wall -Os

@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include "common.h"
 
-#define UART_BASE 0x50900000
+#if !defined(UART_BASE)
+	#error "UART_BASE must be defined"
+#endif
 
 typedef struct {
 	volatile uint32_t thr;

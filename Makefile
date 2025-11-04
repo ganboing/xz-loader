@@ -10,6 +10,10 @@ CPPFLAGS += -DPAYLOAD_XZ=\"$(PAYLOAD_XZ)\"
 CPPFLAGS += -DPAYLOAD_SIZE=$(shell xzcat $(PAYLOAD_XZ) | wc -c)
 endif
 
+ifdef UART_BASE
+CPPFLAGS += -DUART_BASE=$(UART_BASE)
+endif
+
 CPPFLAGS += -Ixz-embedded/linux/include/linux -Iconfig
 
 CFLAGS += -std=gnu11 -fno-strict-aliasing -ffunction-sections -fdata-sections

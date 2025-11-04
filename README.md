@@ -7,3 +7,34 @@ make CROSS_COMPILE=riscv32-unknown-linux-gnu- CC=gcc PAYLOAD_XZ=payload.xz boot-
 ```
 
 The `boot-rv32.bin` can be used in place of `loader.bin`
+### Internals
+
+```
+
+Boot phase:
+
+┌                 ┐                      ┐
+│ ++ extractor ++ │ #### payload.xz #### │
+  ^
+  │
+  └ code starts here
+
+
+Relocation phase:
+
+┌                 ┐                           ┐
+│ ................│.......................... │ ++ extractor ++ │ #### payload.xz #### │
+                                                ^
+                                                │
+         jump to newly relocated extractor code ┘
+
+
+Decompressing phase:
+
+┌                                             ┐
+│ ========== decompressed payload =========== │ ++ extractor ++ │ #### payload.xz #### │
+  ^
+  │
+  └ jump back to start of decompressed payload
+
+```
